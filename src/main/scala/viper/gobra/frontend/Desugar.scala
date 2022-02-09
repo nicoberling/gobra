@@ -1755,7 +1755,10 @@ object Desugar {
           case PPredConstructor(base, args) =>
             def handleBase(base: PPredConstructorBase, w: (in.PredT, Vector[Option[in.Expr]]) => Writer[in.Expr]) = {
               for {
-                dArgs <- sequence(args.map { x => option(x.map(exprD(ctx)(_))) })
+                dArgs <- sequence(args.map {
+                  case _ : PBlankIdentifier => option(None)
+                  case e: PExpression => option(Some(e).map(exprD(ctx)(_)))
+                })
                 idT = info.typ(base) match {
                   case FunctionT(fnArgs, AssertionT) => in.PredT(fnArgs.map(typeD(_, Addressability.rValue)(src)), Addressability.rValue)
                   case _: AbstractType =>

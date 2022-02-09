@@ -1127,13 +1127,10 @@ class ParseTreeTranslator(pom: PositionManager, source: Source, specOnly : Boole
     *     */
   override def visitPredConstructArgs(ctx: PredConstructArgsContext): PredArgs = {
     PredArgs( // Wrap this to ensure type safe pattern matching
-      visitExpressionList(ctx.expressionList()).map {
-        case PBlankIdentifier() => None
-        case e => Some(e)
-      }
+      visitExpressionList(ctx.expressionList())
     )
   }
-  case class PredArgs(args: Vector[Option[PExpression]])
+  case class PredArgs(args: Vector[PExpression])
 
   /**
     * Visits the rule

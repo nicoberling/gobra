@@ -486,6 +486,7 @@ trait ExprTyping extends BaseTyping { this: TypeInfoImpl =>
         case PAssignment(_, _) => noMessages
         case PAssForRange(_, _, _) => noMessages
         case PSelectAssRecv(_, _, _) => noMessages
+        case PPredConstructor(_, _) => noMessages
         case x => error(b, s"blank identifier is not allowed in $x")
       }
       case _ => violation("blank identifier always has a parent")
@@ -501,20 +502,20 @@ trait ExprTyping extends BaseTyping { this: TypeInfoImpl =>
     case p@PPredConstructor(base, _) => {
       def wellTypedApp(base: PPredConstructorBase): Messages = miscType(base) match {
         case FunctionT(args, AssertionT) =>
-          val unappliedPositions = p.args.zipWithIndex.filter(_._1.isEmpty).map(_._2)
-          val givenArgs = p.args.zipWithIndex.filterNot(x => unappliedPositions.contains(x._2)).map(_._1.get)
+          val unappliedPositions = p.args.zipWithIndex.filter(_._1.isBlank).map(_._2)
+          val givenArgs = p.args.zipWithIndex.filterNot(x => unappliedPositions.contains(x._2)).map(_._1)
           val expectedArgs = args.zipWithIndex.filterNot(x => unappliedPositions.contains(x._2)).map(_._1)
           if (givenArgs.isEmpty && expectedArgs.isEmpty) {
             noMessages
           } else {
             multiAssignableTo.errors(givenArgs map exprType, expectedArgs)(p) ++
-              p.args.flatMap(x => x.map(isExpr(_).out).getOrElse(noMessages))
+              p.args.flatMap(isExpr(_).out)
           }
 
         case abstractT: AbstractType =>
           // contextual information would be necessary to predict the constructor's return type (i.e. to find type of unapplied arguments)
           // right now we only support fully applied arguments for built-in predicates
-          val givenArgs = p.args.flatten
+          val givenArgs = p.args.filter(!_.isBlank)
           if (givenArgs.length != p.args.length) {
             error(p, s"partial application is not supported for built-in predicates")
           } else {
@@ -530,7 +531,7 @@ trait ExprTyping extends BaseTyping { this: TypeInfoImpl =>
                     noMessages
                   } else {
                     multiAssignableTo.errors(givenArgs map exprType, args)(p) ++
-                      p.args.flatMap(x => x.map(isExpr(_).out).getOrElse(noMessages))
+                      p.args.flatMap(isExpr(_).out)
                   }
                 case t => error(p, s"expected function type for resolved AbstractType but got $t")
               }
@@ -674,7 +675,7 @@ trait ExprTyping extends BaseTyping { this: TypeInfoImpl =>
         case PFPredBase(id) =>
           idType(id) match {
             case FunctionT(fnArgs, AssertionT) =>
-              PredT(fnArgs.zip(args).collect{ case (typ, None) => typ })
+              PredT(fnArgs.zip(args).collect{ case (typ, PBlankIdentifier()) => typ })
             case _: AbstractType =>
               PredT(Vector()) // because partial application is not supported yet for built-in predicates
             case t => violation(errorMessage(t))
@@ -685,7 +686,7 @@ trait ExprTyping extends BaseTyping { this: TypeInfoImpl =>
             val recvWithIdT = exprOrTypeType(p.recvWithId)
             recvWithIdT match {
               case FunctionT(fnArgs, AssertionT) =>
-                PredT(fnArgs.zip(args).collect{ case (typ, None) => typ })
+                PredT(fnArgs.zip(args).collect{ case (typ, PBlankIdentifier()) => typ })
               case _: AbstractType =>
                 PredT(Vector()) // because partial application is not supported yet for built-in predicates
               case t => violation(errorMessage(t))
@@ -695,7 +696,7 @@ trait ExprTyping extends BaseTyping { this: TypeInfoImpl =>
             val recvWithIdT = exprOrTypeType(p.recvWithId)
             recvWithIdT match {
               case FunctionT(fnArgs, AssertionT) =>
-                PredT(fnArgs.zip(args).collect{ case (typ, None) => typ })
+                PredT(fnArgs.zip(args).collect{ case (typ, PBlankIdentifier()) => typ })
               case _: AbstractType =>
                 PredT(Vector()) // because partial application is not supported yet for built-in predicates
               case t => violation(errorMessage(t))
@@ -846,7 +847,7 @@ trait ExprTyping extends BaseTyping { this: TypeInfoImpl =>
 
       case const: PPredConstructor =>
         // `expr` cannot be `const.id` and thus, it must be one of the arguments
-        val index = const.args.indexWhere { _.exists(y => y.eq(expr)) }
+        val index = const.args.indexWhere { _.eq(expr) }
         violation(index >= 0, s"violation of assumption: a numeric expression $expr does not occur as an argument of its parent $const")
         typ(const.id) match {
           case FunctionT(args, AssertionT) => Some(args(index))

@@ -439,7 +439,7 @@ class DefaultPrettyPrinter extends PrettyPrinter with kiama.output.PrettyPrinter
       case PBlankIdentifier() => "_"
       // already using desired notation for predicate constructor instances, i.e. the "{}" delimiters for
       // partially applied predicates
-      case PPredConstructor(base, args) => show(base) <> braces(showList(args)(_.fold(text("_"))(showExpr)))
+      case PPredConstructor(base, args) => show(base) <> braces(showList(args)(showExpr))
       case PBitAnd(left, right) => showExpr(left) <+> "&" <+> showExpr(right)
       case PBitOr(left, right) => showExpr(left) <+> "|" <+> showExpr(right)
       case PBitXor(left, right) => showExpr(left) <+> "^" <+> showExpr(right)

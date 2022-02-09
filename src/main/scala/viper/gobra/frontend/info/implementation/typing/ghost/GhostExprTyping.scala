@@ -385,7 +385,8 @@ trait GhostExprTyping extends BaseTyping { this: TypeInfoImpl =>
       }
 
       case _: PAccess | _: PPredicateAccess => !strong
-      case PPredConstructor(_, args) => args.flatten.forall(go)
+      case PPredConstructor(_, args) => args.forall(go)
+      case PBlankIdentifier() => true
 
       case n: PTypeAssertion => go(n.base)
       case n: PTypeOf => go(n.exp)

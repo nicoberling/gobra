@@ -2514,19 +2514,19 @@ class ParserUnitTests extends AnyFunSuite with Matchers with Inside {
 
   test("Parser: should be able to parse a fpredicate constructor") {
     frontend.parseExpOrFail("mutexInvariant!<x!>") should matchPattern {
-      case PPredConstructor(PFPredBase(PIdnUse("mutexInvariant")), Vector(Some(PNamedOperand(PIdnUse("x"))))) =>
+      case PPredConstructor(PFPredBase(PIdnUse("mutexInvariant")), Vector(PNamedOperand(PIdnUse("x")))) =>
     }
   }
 
   test("Parser: should be able to parse a mpredicate constructor") {
     frontend.parseExpOrFail("p.mutexInvariant!<x!>") should matchPattern {
-      case PPredConstructor(PDottedBase(PDot( PNamedOperand(PIdnUse("p")), PIdnUse("mutexInvariant"))), Vector(Some(PNamedOperand(PIdnUse("x"))))) =>
+      case PPredConstructor(PDottedBase(PDot( PNamedOperand(PIdnUse("p")), PIdnUse("mutexInvariant"))), Vector(PNamedOperand(PIdnUse("x")))) =>
     }
   }
 
   test("Parser: should be able to parse a fpredicate constructor with wildcard") {
     frontend.parseExpOrFail("p!<x, _, y!>") should matchPattern {
-      case PPredConstructor(PFPredBase(PIdnUse("p")), Vector(Some(PNamedOperand(PIdnUse("x"))), None, Some(PNamedOperand(PIdnUse("y"))))) =>
+      case PPredConstructor(PFPredBase(PIdnUse("p")), Vector(PNamedOperand(PIdnUse("x")), PBlankIdentifier(), PNamedOperand(PIdnUse("y")))) =>
     }
   }
 

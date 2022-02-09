@@ -304,7 +304,9 @@ case class PSeq(stmts: Vector[PStatement]) extends PActualStatement with PGhosti
 sealed trait PExpressionOrType extends PNode
 sealed trait PExpressionAndType extends PNode with PExpression with PType
 
-sealed trait PExpression extends PNode with PExpressionOrType
+sealed trait PExpression extends PNode with PExpressionOrType {
+  def isBlank : Boolean = this == PBlankIdentifier()
+}
 
 sealed trait PActualExpression extends PExpression
 
@@ -539,7 +541,7 @@ case class PDottedBase(recvWithId: PDot) extends PPredConstructorBase {
   override val id: PIdnUse = recvWithId.id
   val recv: PExpressionOrType = recvWithId.base
 }
-case class PPredConstructor(id: PPredConstructorBase, args: Vector[Option[PExpression]]) extends PActualExpression
+case class PPredConstructor(id: PPredConstructorBase, args: Vector[PExpression]) extends PActualExpression
 
 /**
   * Types
