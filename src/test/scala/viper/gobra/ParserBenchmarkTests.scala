@@ -77,7 +77,7 @@ import scala.concurrent.duration.Duration
   *   - GOBRATESTS_TIMEOUT = 180 // timeout in seconds, by default 180s
   */
 @DoNotDiscover
-class DetailedBenchmarkTests extends BenchmarkTests {
+class ParserBenchmarkTests extends BenchmarkTests {
 
   override def name = "Gobra-Detailed Benchmarks"
 
@@ -147,10 +147,10 @@ class DetailedBenchmarkTests extends BenchmarkTests {
     override val phases: Seq[Phase] = lastStep.phases
 
     /**
-     * Reset any messages recorded internally (errors from previous program translations, etc.)
-     */
+      * Reset any messages recorded internally (errors from previous program translations, etc.)
+      */
     override def resetMessages(): Unit = {
-      verifying.reset()
+      lastStep.reset()
     }
 
     override def gobraResult: VerifierResult = lastStep.res match {

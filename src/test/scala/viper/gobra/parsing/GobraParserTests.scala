@@ -25,7 +25,7 @@ class GobraParserTests extends AbstractGobraTests with BeforeAndAfterAll {
 
   val regressionsPropertyName = "GOBRATESTS_REGRESSIONS_DIR"
 
-  val regressionsDir: String = System.getProperty(regressionsPropertyName, "better_errors")
+  val regressionsDir: String = System.getProperty(regressionsPropertyName, "/home/nico/Documents/repositories/projects/eth/BA/test")
   val testDirectories: Seq[String] = Vector(regressionsDir)
   override val defaultTestPattern: String = PackageResolver.inputFilePattern
 

@@ -42,20 +42,30 @@ object Parser {
     */
 
   def parse(input: Vector[Source], specOnly: Boolean = false)(config: Config): Either[Vector[VerifierError], PPackage] = {
+    val noImports = true
+
     val sources = input
       .map(Gobrafier.gobrafy)
     for {
       parseAst <- time("ANTLR_FULL", sources.map(_.name).mkString(", ")) {parseSources(sources, specOnly)(config)}
-      postprocessedAst <- new ImportPostprocessor(parseAst.positions.positions).postprocess(parseAst)(config)
+      postprocessedAst <- importsOrNot(Right(parseAst), noImports)( new ImportPostprocessor(parseAst.positions.positions).postprocess(parseAst)(config))
     } yield postprocessedAst
+  }
+
+  private def importsOrNot(parseAst : Either[Vector[VerifierError], PPackage], noImports: Boolean)(block: => Either[Vector[VerifierError], PPackage]): Either[Vector[VerifierError], PPackage] = {
+    if (noImports) {
+      parseAst
+    } else {
+      block
+    }
   }
 
   private def time[R](parser : String, filename : String)(block: => R): R = {
     val t0 = System.nanoTime()/1000000000.0
     val result = block    // call-by-name
     val t1 = System.nanoTime()/1000000000.0
-    //println("+#RESULT={\"filename\": \""+ filename + "\", \"parser\": \"" + parser + "\", \"time\":" + (t1 - t0)
-    //  + ", \"nodes\":null}")
+    println("+#RESULT={\"filename\": \""+ filename + "\", \"parser\": \"" + parser + "\", \"time\":" + (t1 - t0)
+      + ", \"nodes\":null}")
     result
 }
   type SourceCacheKey = String
