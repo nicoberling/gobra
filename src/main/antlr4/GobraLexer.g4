@@ -7,6 +7,9 @@
 lexer grammar GobraLexer;
 import GoLexer;
 
+@members {boolean escapedOnly = true;}
+
+
 FLOAT_LIT : (DECIMAL_FLOAT_LIT | HEX_FLOAT_LIT) -> mode(NLSEMI);
 
 // Add lookahead to avoid parsing range expressions like '[1..3]' as two floats '1.' and '.3'
@@ -19,35 +22,35 @@ DECIMAL_FLOAT_LIT      : DECIMALS ('.'{_input.LA(1) != '.'}? DECIMALS? EXPONENT?
 
 TRUE        : 'true' -> mode(NLSEMI);
 FALSE       : 'false' -> mode(NLSEMI);
-ASSERT      : 'assert';
-ASSUME      : 'assume';
-INHALE      : 'inhale';
-EXHALE      : 'exhale';
-PRE         : 'requires';
-PRESERVES   : 'preserves';
-POST        : 'ensures';
-INV         : 'invariant';
-DEC         : 'decreases' -> mode(NLSEMI);
-PURE        : 'pure' -> mode(NLSEMI);
-IMPL        : 'implements';
+ASSERT      : 'assert' {!escapedOnly}? | '\\assert';
+ASSUME      : 'assume' {!escapedOnly}? | '\\assume';
+INHALE      : 'inhale' {!escapedOnly}? | '\\inhale';
+EXHALE      : 'exhale' {!escapedOnly}? | '\\exhale';
+PRE         : 'requires' {!escapedOnly}? | '\\requires';
+PRESERVES   : 'preserves' {!escapedOnly}? | '\\preserves';
+POST        : 'ensures' {!escapedOnly}? | '\\ensures';
+INV         : 'invariant' {!escapedOnly}? | '\\invariant';
+DEC         : ('decreases' {!escapedOnly}? | '\\decreases') -> mode(NLSEMI);
+PURE        : ('pure' {!escapedOnly}? | '\\pure') -> mode(NLSEMI);
+IMPL        : 'implements' {!escapedOnly}? | '\\implements';
 OLD         : 'old'-> mode(NLSEMI);
 LHS         : '#lhs';
-FORALL      : 'forall';
-EXISTS      : 'exists';
+FORALL      : 'forall' {!escapedOnly}? | '\\forall';
+EXISTS      : 'exists' {!escapedOnly}? | '\\exists';
 ACCESS      : 'acc' -> mode(NLSEMI);
-FOLD        : 'fold';
-UNFOLD      : 'unfold';
-UNFOLDING   : 'unfolding';
-GHOST       : 'ghost';
-IN          : 'in';
+FOLD        : 'fold' {!escapedOnly}? | '\\fold';
+UNFOLD      : 'unfold' {!escapedOnly}? | '\\unfold';
+UNFOLDING   : 'unfolding' {!escapedOnly}? | '\\unfolding';
+GHOST       : 'ghost' {!escapedOnly}? | '\\ghost';
+IN          : 'in' {!escapedOnly}? | '\\in';
 MULTI       : '#';
-SUBSET      : 'subset';
-UNION       : 'union';
-INTERSECTION: 'intersection';
-SETMINUS    : 'setminus';
+SUBSET      : 'subset' {!escapedOnly}? | '\\subset';
+UNION       : 'union' {!escapedOnly}? | '\\union';
+INTERSECTION: 'intersection' {!escapedOnly}? | '\\intersection';
+SETMINUS    : 'setminus' {!escapedOnly}? | '\\setminus';
 IMPLIES     : '==>';
 WAND        : '--*';
-APPLY       : 'apply';
+APPLY       : 'apply' {!escapedOnly}? | '\\apply';
 QMARK       : '?';
 L_PRED      : '!<';
 R_PRED      : '!>' -> mode(NLSEMI);
@@ -65,15 +68,12 @@ GET         : 'get'-> mode(NLSEMI);
 DOM         : 'domain'-> mode(NLSEMI);
 AXIOM       : 'axiom'-> mode(NLSEMI);
 NONE        : 'none' -> mode(NLSEMI);
-PRED        : 'pred';
+PRED        : 'pred' {!escapedOnly}? | '\\pred';
 TYPE_OF      : 'typeOf'-> mode(NLSEMI);
 IS_COMPARABLE: 'isComparable'-> mode(NLSEMI);
-SHARE       : 'share';
+SHARE       : 'share' {!escapedOnly}? | '\\share';
 ADDR_MOD    : '@'-> mode(NLSEMI);
 DOT_DOT     : '..';
-SHARED      : 'shared';
-EXCLUSIVE   : 'exclusive';
-PREDICATE   : 'predicate';
 WRITEPERM   : 'writePerm' -> mode(NLSEMI);
 NOPERM      : 'noPerm' -> mode(NLSEMI);
-TRUSTED     : 'trusted' -> mode(NLSEMI);
+TRUSTED     : ('trusted' {!escapedOnly}? | '\\trusted') -> mode(NLSEMI);

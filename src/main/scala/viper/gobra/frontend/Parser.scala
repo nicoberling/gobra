@@ -281,6 +281,7 @@ object Parser {
       this({
         val charStream = CharStreams.fromReader(source.reader)
         val lexer = new GobraLexer(charStream)
+        lexer.escapedOnly = false
         lexer.removeErrorListeners()
         lexer.addErrorListener(new InformativeErrorListener(errors, source))
         new CommonTokenStream(lexer)
