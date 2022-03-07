@@ -141,7 +141,7 @@ class DetailedBenchmarkTests extends BenchmarkTests {
       Right(Await.result(resultFuture, Duration(timeoutSec, TimeUnit.SECONDS)))
     })
 
-    private val lastStep = verifying
+    private val lastStep = parsing
 
     /** Phases of the frontend which are executed sequentially. */
     override val phases: Seq[Phase] = lastStep.phases
@@ -156,7 +156,7 @@ class DetailedBenchmarkTests extends BenchmarkTests {
     override def gobraResult: VerifierResult = lastStep.res match {
       case Some(Left(Vector())) => VerifierResult.Success
       case Some(Left(errors))   => VerifierResult.Failure(errors)
-      case Some(Right(result))  => result
+      case Some(Right(result))  => VerifierResult.Success
     }
   }
 }

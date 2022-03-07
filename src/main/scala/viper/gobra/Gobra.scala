@@ -33,13 +33,7 @@ object GoVerifier {
 
   val rootLogger = "viper.gobra"
 
-  val version: String = {
-    val buildRevision = BuildInfo.git("revision")
-    val buildBranch = BuildInfo.git("branch")
-    val buildVersion = s"$buildRevision${if (buildBranch == "master") "" else s"@$buildBranch"}"
-
-    s"${BuildInfo.projectVersion} ($buildVersion)"
-  }
+  val version: String = "AS"
 }
 
 trait GoVerifier {
