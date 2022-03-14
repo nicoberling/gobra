@@ -31,12 +31,20 @@ object TranslationHelpers {
     VOCABULARY.getLiteralName(GobraParser.RSHIFT) -> PShiftRight,
     VOCABULARY.getLiteralName(GobraParser.AMPERSAND) -> PBitAnd,
     VOCABULARY.getLiteralName(GobraParser.BIT_CLEAR) -> PBitClear,
-    VOCABULARY.getLiteralName(GobraParser.IN) -> PIn,
+    // Vocabulary.getLiteralName(GobraParser.IN) will return null because it could be 'in' or '\in'
+    // One solution: replace the strings in translator by the token indices.
+    // For example, Vector(pe : PExpression, ".", idnUse(id)) would become Vector(pe : PExpression, DOT, idnUse(id))
+    "'in'" -> PIn,
+    "'\\in'" -> PIn,
     VOCABULARY.getLiteralName(GobraParser.MULTI) -> PMultiplicity,
-    VOCABULARY.getLiteralName(GobraParser.SUBSET) -> PSubset,
-    VOCABULARY.getLiteralName(GobraParser.UNION) -> PUnion,
-    VOCABULARY.getLiteralName(GobraParser.INTERSECTION) -> PIntersection,
-    VOCABULARY.getLiteralName(GobraParser.SETMINUS) -> PSetMinus,
+    "'subset'" -> PSubset,
+    "'\\subset'" -> PSubset,
+    "'union'" -> PUnion,
+    "'\\union'" -> PUnion,
+    "'intersection'" -> PIntersection,
+    "'\\intersection'" -> PIntersection,
+    "'setminus'" -> PSetMinus,
+    "'\\setminus'" -> PSetMinus,
     VOCABULARY.getLiteralName(GobraParser.LOGICAL_AND) -> PAnd,
     VOCABULARY.getLiteralName(GobraParser.LOGICAL_OR) -> POr,
     VOCABULARY.getLiteralName(GobraParser.IMPLIES) -> PImplication

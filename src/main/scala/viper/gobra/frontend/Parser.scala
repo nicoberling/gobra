@@ -281,7 +281,12 @@ object Parser {
       this({
         val charStream = CharStreams.fromReader(source.reader)
         val lexer = new GobraLexer(charStream)
-        lexer.escapedOnly = false
+        val gobraparam =raw"//\s*#gobra\s+([a-zA-Z]+):\s*([a-zA-Z0-9]+)".r
+        lexer.escapedOnly = source.optLineContents(1) match {
+          case Some(gobraparam("escapedOnly", "true")) => true
+          case Some(gobraparam("escapedOnly", "false")) => false
+          case _ => false // TODO : Set from config
+        }
         lexer.removeErrorListeners()
         lexer.addErrorListener(new InformativeErrorListener(errors, source))
         new CommonTokenStream(lexer)
