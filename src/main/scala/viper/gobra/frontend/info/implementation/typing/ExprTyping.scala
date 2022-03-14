@@ -190,11 +190,62 @@ trait ExprTyping extends BaseTyping { this: TypeInfoImpl =>
     case _: PFloatLit => ???
 
     case n@PCompositeLit(t, lit) =>
-      val simplifiedT = t match {
-        case PImplicitSizeArrayType(elem) => ArrayT(lit.elems.size, typeSymbType(elem))
-        case t: PType => typeSymbType(t)
+      val predBaseOrSimplifiedT = t match {
+        case PImplicitSizeArrayType(elem) => Right(ArrayT(lit.elems.size, typeSymbType(elem)))
+        case name : PTypeName if exprOrType(name).isLeft => Left(name)
+        case t: PType => Right(typeSymbType(t))
       }
-      literalAssignableTo.errors(lit, simplifiedT)(n)
+      predBaseOrSimplifiedT match {
+        case Right(s : Type) => literalAssignableTo.errors(lit, s)(n)
+        case Left(p : PTypeName) =>
+          val litargs = lit.elems.map {
+            case PKeyedElement(None, PExpCompositeVal(exp)) => exp
+            case _ => ???
+          }
+          def wellTypedApp(base: PTypeName): Messages = exprOrTypeType(base) match {
+            case FunctionT(args, AssertionT) =>
+              val unappliedPositions = litargs.zipWithIndex.filter(_._1.isBlank).map(_._2)
+              val givenArgs = litargs.zipWithIndex.filterNot(x => unappliedPositions.contains(x._2)).map(_._1)
+              val expectedArgs = args.zipWithIndex.filterNot(x => unappliedPositions.contains(x._2)).map(_._1)
+              if (givenArgs.isEmpty && expectedArgs.isEmpty) {
+                noMessages
+              } else {
+                multiAssignableTo.errors(givenArgs map exprType, expectedArgs)(p) ++
+                  litargs.flatMap(isExpr(_).out)
+              }
+
+            case abstractT: AbstractType =>
+              // contextual information would be necessary to predict the constructor's return type (i.e. to find type of unapplied arguments)
+              // right now we only support fully applied arguments for built-in predicates
+              val givenArgs = litargs.filter(!_.isBlank)
+              if (givenArgs.length != litargs.length) {
+                error(p, s"partial application is not supported for built-in predicates")
+              } else {
+                val givenArgTypes = givenArgs map exprType
+                val msgs = abstractT.messages(p, givenArgTypes)
+                if (msgs.nonEmpty) {
+                  msgs
+                } else {
+                  // the typing function should be defined for these arguments as `msgs` is empty
+                  abstractT.typing(givenArgTypes) match {
+                    case FunctionT(args, AssertionT) =>
+                      if (givenArgs.isEmpty && args.isEmpty) {
+                        noMessages
+                      } else {
+                        multiAssignableTo.errors(givenArgs map exprType, args)(p) ++
+                          litargs.flatMap(isExpr(_).out)
+                      }
+                    case t => error(p, s"expected function type for resolved AbstractType but got $t")
+                  }
+                }
+              }
+
+            case t => error(p, s"expected base of function type, got ${base.id} of type $t")
+          }
+
+          wellDefPredConstrBase(p).out ++ wellTypedApp(p)
+      }
+
 
     case _: PFunctionLit => noMessages
 
@@ -487,7 +538,14 @@ trait ExprTyping extends BaseTyping { this: TypeInfoImpl =>
         case PAssForRange(_, _, _) => noMessages
         case PSelectAssRecv(_, _, _) => noMessages
         case PPredConstructor(_, _) => noMessages
-        case c@PExpCompositeVal(_) => ???
+        case tree.parent(tree.parent(tree.parent(PCompositeLit(t, _)))) =>  t match {
+          //The great-grandparent of composite value is the composite literal
+            case base@(_ : PTypeName) => resolve(base) match {
+              case Some(_ : ap.PredicateKind) => noMessages
+              case _ => error(b, s"blank identifier is not allowed in non-predicate constructors")
+            }
+            case _ => error(b, s"blank identifier is not allowed in $t constructors")
+        }
         case x => error(b, s"blank identifier is not allowed in $x")
       }
       case _ => violation("blank identifier always has a parent")
@@ -946,7 +1004,47 @@ trait ExprTyping extends BaseTyping { this: TypeInfoImpl =>
 
   def expectedCompositeLitType(lit: PCompositeLit): Type = lit.typ match {
     case i: PImplicitSizeArrayType => ArrayT(lit.lit.elems.size, typeSymbType(i.elem))
-    case name : PTypeName => typeSymbType(name)
+    case base : PTypeName if exprOrType(base).isLeft =>
+        val errorMessage: Any => String =
+          t => s"expected function or AbstractType for base of a predicate constructor but got $t"
+        val args = lit.lit.elems.map {
+          case PKeyedElement(None, PExpCompositeVal(exp)) => exp
+          case _ => ???
+        }
+        base match {
+          case PNamedOperand(id) =>
+            idType(id) match {
+              case FunctionT(fnArgs, AssertionT) =>
+                PredT(fnArgs.zip(args).collect{ case (typ, PBlankIdentifier()) => typ })
+              case _: AbstractType =>
+                PredT(Vector()) // because partial application is not supported yet for built-in predicates
+              case t => violation(errorMessage(t))
+            }
+
+          case p: PDot => resolve(p) match {
+            case Some(_: ap.Predicate | _: ap.ReceivedPredicate | _: ap.ImplicitlyReceivedInterfacePredicate) =>
+              val recvWithIdT = exprOrTypeType(p)
+              recvWithIdT match {
+                case FunctionT(fnArgs, AssertionT) =>
+                  PredT(fnArgs.zip(args).collect{ case (typ, PBlankIdentifier()) => typ })
+                case _: AbstractType =>
+                  PredT(Vector()) // because partial application is not supported yet for built-in predicates
+                case t => violation(errorMessage(t))
+              }
+
+            case Some(_: ap.PredicateExpr) =>
+              val recvWithIdT = exprOrTypeType(p)
+              recvWithIdT match {
+                case FunctionT(fnArgs, AssertionT) =>
+                  PredT(fnArgs.zip(args).collect{ case (typ, PBlankIdentifier()) => typ })
+                case _: AbstractType =>
+                  PredT(Vector()) // because partial application is not supported yet for built-in predicates
+                case t => violation(errorMessage(t))
+              }
+
+            case _ => violation(s"unexpected base $base for predicate constructor")
+          }
+        }
     case t: PType => typeSymbType(t)
   }
 

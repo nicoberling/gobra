@@ -6,12 +6,15 @@
 
 package viper.gobra.frontend.info.implementation.typing
 
-import org.bitbucket.inkytonik.kiama.util.Messaging.{Messages, message, noMessages}
+import org.bitbucket.inkytonik.kiama.util.Messaging.{Messages, error, message, noMessages}
 import viper.gobra.ast.frontend._
+import viper.gobra.frontend.info.base.SymbolTable
 import viper.gobra.frontend.info.base.SymbolTable._
 import viper.gobra.frontend.info.base.Type._
 import viper.gobra.frontend.info.implementation.TypeInfoImpl
 import viper.gobra.util.Violation
+import viper.gobra.ast.frontend.{AstPattern => ap}
+
 
 trait MiscTyping extends BaseTyping { this: TypeInfoImpl =>
 
@@ -109,6 +112,18 @@ trait MiscTyping extends BaseTyping { this: TypeInfoImpl =>
       case c => Violation.violation(s"This case should be unreachable, but got $c")
     }
 
+
+  lazy val wellDefPredConstrBase : WellDefinedness[PTypeName] = createWellDef  {
+      case base@PNamedOperand (id) => entity(id) match {
+        case _: SymbolTable.FPredicate | _: SymbolTable.BuiltInFPredicate => noMessages
+        case _ => error (base, s"identifier $id does not identify a predicate")
+        }
+      case base: PDot => resolve (base) match {
+        case Some (_: ap.Predicate | _: ap.ReceivedPredicate | _: ap.ImplicitlyReceivedInterfacePredicate) => noMessages
+        case Some (_: ap.PredicateExpr) => noMessages
+        case _ => error (base, s"invalid base $base for predicate constructor")
+      }
+  }
 
 
   // received member type

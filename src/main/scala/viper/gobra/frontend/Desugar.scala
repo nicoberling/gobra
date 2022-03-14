@@ -1929,6 +1929,8 @@ object Desugar {
         val arrayTyp = typeD(info.symbType(t.elem), Addressability.arrayElement(Addressability.literal))(meta(lit))
         literalValD(ctx)(lit.lit, in.ArrayT(arrayLen, arrayTyp, Addressability.literal))
 
+      case t:  PTypeName if info.exprOrType(t).isLeft => ??? // TODO : Predicate constuctor
+
       case t: PType =>
         val it = typeD(info.symbType(t), Addressability.literal)(meta(lit))
         literalValD(ctx)(lit.lit, it)
