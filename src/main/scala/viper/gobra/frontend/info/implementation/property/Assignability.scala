@@ -223,6 +223,22 @@ trait Assignability extends BaseProperty { this: TypeInfoImpl =>
             areAllElementsAssignable(elems, values) and
             areAllConstantKeysDifferent(elems, keys)
 
+        case FunctionT(args, AssertionT) =>
+          if (elems.exists(_.key.isDefined) | elems.exists(_.exp.isInstanceOf[PLitCompositeVal])) {
+            failedProp(s"All predicate constructor arguments must be unkeyed expressions")
+          } else {
+            val elemExprs = elems.map(_.exp.asInstanceOf[PExpCompositeVal].exp)
+            val unappliedPositions = elemExprs.zipWithIndex.filter(_._1.isBlank).map(_._2)
+            val givenArgs = elemExprs.zipWithIndex.filterNot(x => unappliedPositions.contains(x._2)).map(_._1)
+            val expectedArgs = args.zipWithIndex.filterNot(x => unappliedPositions.contains(x._2)).map(_._1)
+            if (givenArgs.isEmpty && expectedArgs.isEmpty) {
+              successProp
+            } else {
+              multiAssignableTo.result(givenArgs map exprType, expectedArgs)
+            }
+          }
+
+
         case t => failedProp(s"cannot assign literal to $t")
       }
     case (l, t) => failedProp(s"cannot assign literal $l to $t")

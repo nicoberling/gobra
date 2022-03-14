@@ -487,6 +487,7 @@ trait ExprTyping extends BaseTyping { this: TypeInfoImpl =>
         case PAssForRange(_, _, _) => noMessages
         case PSelectAssRecv(_, _, _) => noMessages
         case PPredConstructor(_, _) => noMessages
+        case c@PExpCompositeVal(_) => ???
         case x => error(b, s"blank identifier is not allowed in $x")
       }
       case _ => violation("blank identifier always has a parent")
@@ -945,6 +946,7 @@ trait ExprTyping extends BaseTyping { this: TypeInfoImpl =>
 
   def expectedCompositeLitType(lit: PCompositeLit): Type = lit.typ match {
     case i: PImplicitSizeArrayType => ArrayT(lit.lit.elems.size, typeSymbType(i.elem))
+    case name : PTypeName => typeSymbType(name)
     case t: PType => typeSymbType(t)
   }
 
