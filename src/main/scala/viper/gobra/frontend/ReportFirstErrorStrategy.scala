@@ -27,6 +27,8 @@ class ReportFirstErrorStrategy extends DefaultErrorStrategy {
 
   override def recover(recognizer: Parser, e: RecognitionException): Unit = {
     var context = recognizer.getContext
+    // First, report the error
+    reportError(recognizer, e)
     // For blocks that could be interpreted as struct literals (like `if a == b { }` or `switch tag := 0; tag { }`)
     // Cast a wide net to catch every case, but still allow faster parsing if the error can't be an ambiguity.
     // Thee rest of recover and recoverInline is the same as in the superclass.
@@ -45,6 +47,8 @@ class ReportFirstErrorStrategy extends DefaultErrorStrategy {
   override def recoverInline(recognizer: Parser): Token = {
     val e = new InputMismatchException(recognizer)
     var context = recognizer.getContext
+    // First, report the error
+    reportError(recognizer, e)
     context match {
       case _ : BlockContext => throw new AmbiguityException
       case _ : ExprSwitchStmtContext => throw new AmbiguityException
